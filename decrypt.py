@@ -6,6 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import (
     Cipher, algorithms, modes
 )
+from cryptography.exceptions import InvalidTag
 
 
 class SerialBuffer(object):
@@ -152,11 +153,14 @@ class SerialBuffer(object):
         key = binascii.unhexlify(self._args.key)
         aad = binascii.unhexlify("3000112233445566778899AABBCCDDEEFF")
 
-        decryption = self.decrypt(
-            key,
-            aad
-        )
-        print(decryption)
+        try:
+            decryption = self.decrypt(
+                key,
+                aad
+            )
+            print(decryption)
+        except InvalidTag:
+            print("ERROR: Invalid Tag.")
 
     def decrypt(self, key, additional_data):
         iv = binascii.unhexlify(self._system_title + self._frame_counter)
