@@ -35,7 +35,7 @@ class SmartyProxy():
         self.STATE_DONE = 10
 
         # Command line arguments
-        self._args = {"key": ""}
+        self._args = {}
 
         # Serial connection from which we read the data from the smart meter
         self._connection = None
@@ -57,6 +57,8 @@ class SmartyProxy():
     def main(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('key', help="Decryption key")
+        parser.add_argument('-i', '--serial-input-port', required=False, default="/dev/ttyUSB0", help="Input port. Defaults to /dev/ttyUSB0.")
+        parser.add_argument('-o', '--serial-output-port', required=False, help="Output port, e.g. /dev/pts/2.")
         self._args = parser.parse_args()
 
         self.connect()
@@ -67,7 +69,7 @@ class SmartyProxy():
     def connect(self):
         try:
             self._connection = serial.Serial(
-                port="/dev/ttyUSB0",
+                port=self._args.serial_input_port,
                 baudrate=115200,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -193,6 +195,9 @@ class SmartyProxy():
                 gcm_tag
             )
             print(decryption)
+
+            if self._args.serial_output_port:
+                self.write_to_serial_port(decryption)
         except InvalidTag:
             print("ERROR: Invalid Tag.")
 
@@ -207,6 +212,17 @@ class SmartyProxy():
         decryptor.authenticate_additional_data(additional_data)
 
         return decryptor.update(payload) + decryptor.finalize()
+
+    # Write the decrypted data to a serial port (e.g. one created with socat)
+    def write_to_serial_port(self, decryption):
+        ser = serial.Serial(
+            port=self._args.serial_output_port,
+            baudrate=115200,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+        )
+        ser.write(decryption)
+        ser.close()
 
 
 if __name__ == '__main__':
