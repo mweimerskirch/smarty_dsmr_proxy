@@ -24,7 +24,7 @@ Start socat to get a virtual serial port that is forwarded to a TCP connection o
 socat -d -d pty,raw,echo=0 TCP-LISTEN:2001,reuseaddr
 ```
 
-The output should look like as follows. 
+The output should look as follows. 
 ```
 2018/04/13 20:30:00 socat[1301] N PTY is /dev/pts/2
 2018/04/13 20:30:00 socat[1301] N listening on AF=2 0.0.0.0:2001
@@ -45,7 +45,7 @@ Start socat to get a virtual serial port that is connected to a second virtual s
 socat -d -d pty,raw,echo=0 pty,raw,echo=0
 ```
 
-The output should look like as follows. 
+The output should look as follows. 
 ```
 2018/04/13 20:30:00 socat[1301] N PTY is /dev/pts/2
 2018/04/13 20:30:00 socat[1301] N PTY is /dev/pts/3
@@ -59,3 +59,9 @@ python3 decrypt.py KEY --serial-output-port=/dev/pts/2
 
 You can now configure dsmr_reader, dsmr_parser (or your Home Assistant instance) to connect to the second port from the previous output (in this example /dev/pts/3).
 
+## Further information
+
+* [DSMR Component for Home Assistant](https://www.home-assistant.io/components/sensor.dsmr/)
+* [DSMR Parser](https://github.com/ndokter/dsmr_parser), the library used by Home Assistant to read meter data
+* [DSMR Reader](http://dsmr-reader.readthedocs.io/en/latest/), stand-alone utility to log and view your energy consumption
+* [P1 Port Specification for Luxembourg's "Smarty" electricity meter](https://smarty.creos.net/wp-content/uploads/P1PortSpecification.pdf), the reference document for this library. It describes how the encryption on top of the DSMR standard works.
