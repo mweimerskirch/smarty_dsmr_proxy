@@ -6,7 +6,7 @@ I run this on a Raspberry Pi Zero W that I have connected to my "Smarty" meter u
 
 ## Before you start
 
-* Ask you energy provider for your decryption key. This might take a few days.
+* Ask you energy provider for your decryption key. This might take a few days. You might want to request from LuxMetering the activation of the full read-out on your smart-meter if you want to get instant voltage/current readings per phase.
 * You need a cable to connect your Raspberry Pi (or whatever else you want to use) to the "P1 port" of your smart meter. Those cables are available under different names: "DSMR cable", "P1 cable" or "slimme meter kabel" (which is Dutch for "smart meter cable").
 * You need to install the "cryptography" and "serial" libraries for Python. Ubuntu/Debian: ``sudo apt-get install python3-cryptography python3-serial``
 * You might need to install "socat" for the examples below. Ubuntu/Debian: ``sudo apt-get install socat``
@@ -74,18 +74,18 @@ Then create a custom configuration:
 sudo nano /etc/supervisor/conf.d/smarty_dsmr_proxy.conf
 ```
 
-My configuration looks like this. Don't forget to use your individual decryption key and adjust the port name to what "socat" uses (see above):
+My configuration looks like this. Don't forget to use your individual decryption key. To cope with the changing pts numbers, it is easiest to use the "link=" option of socat to create a symbolic name with a fixed name (if you want this link in /dev, socat will have to run as root, and you may need to use the "group=" and "mode=" options of socat so that the proxy can still write on the pts). If you use a second pts as local end point, you can use the same option on the second 'pty' block to provide a fixed name for this as well:
 
 ```
 [program:socat]
-command=socat -d -d pty,raw,echo=0 TCP-LISTEN:2001,reuseaddr
+command=socat -d -d pty,raw,echo=0,link=/home/pi/smarty_proxy_pts TCP-LISTEN:2001,reuseaddr
 priority=10
 autostart=true
 autorestart=true
 user=pi
 
 [program:smarty_dsmr_proxy]
-command=python3 /home/pi/smarty_dsmr_proxy/decrypt.py DECRYPTION_KEY --serial-output-port=/dev/pts/1
+command=python3 /home/pi/smarty_dsmr_proxy/decrypt.py DECRYPTION_KEY --serial-output-port=/home/pi/smarty_proxy_pts
 priority=20
 autostart=true
 autorestart=true
