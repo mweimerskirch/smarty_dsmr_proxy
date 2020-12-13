@@ -124,8 +124,13 @@ class SmartyProxy():
 
         # System title has been read.
         elif self._state == self.STATE_HAS_SYSTEM_TITLE:
-            self._next_state = self._next_state + 1
-            self._state = self.STATE_HAS_SYSTEM_TITLE_SUFFIX  # Ignore separator byte
+            if hex_input == b'82':
+                self._next_state = self._next_state + 1
+                self._state = self.STATE_HAS_SYSTEM_TITLE_SUFFIX  # Ignore separator byte
+            else:
+                print("ERROR, expected 0x82 separator byte not found, dropping frame")
+                self._state = self.STATE_IGNORING
+ 
 
         # Additional byte after the system title has been read.
         elif self._state == self.STATE_HAS_SYSTEM_TITLE_SUFFIX:
