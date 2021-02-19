@@ -59,6 +59,7 @@ class SmartyProxy():
         parser.add_argument('key', help="Decryption key")
         parser.add_argument('-i', '--serial-input-port', required=False, default="/dev/ttyUSB0", help="Input port. Defaults to /dev/ttyUSB0.")
         parser.add_argument('-o', '--serial-output-port', required=False, help="Output port, e.g. /dev/pts/2.")
+        parser.add_argument('-a', '--aad', required=False, default="3000112233445566778899AABBCCDDEEFF", help="Additional authenticated data")
         self._args = parser.parse_args()
 
         self.connect()
@@ -186,7 +187,7 @@ class SmartyProxy():
     # Once we have a full encrypted "telegram", put everything together for decryption.
     def analyze(self):
         key = binascii.unhexlify(self._args.key)
-        additional_data = binascii.unhexlify("3000112233445566778899AABBCCDDEEFF")
+        additional_data = binascii.unhexlify(self._args.aad)
         iv = binascii.unhexlify(self._system_title + self._frame_counter)
         payload = binascii.unhexlify(self._payload)
         gcm_tag = binascii.unhexlify(self._gcm_tag)
