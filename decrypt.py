@@ -6,6 +6,17 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
 from cryptography.exceptions import InvalidTag
 
+has_dsmr_parser = True
+try:
+    from dsmr_parser import telegram_specifications
+    from dsmr_parser.parsers import TelegramParser
+
+    from dsmr_parser import obis_references
+    import dsmr_parser.obis_name_mapping
+except ImportError:
+    has_dsmr_parser = False
+
+
 
 class SmartyProxy():
     def __init__(self):
@@ -59,6 +70,8 @@ class SmartyProxy():
         parser.add_argument('key', help="Decryption key")
         parser.add_argument('-i', '--serial-input-port', required=False, default="/dev/ttyUSB0", help="Input port. Defaults to /dev/ttyUSB0.")
         parser.add_argument('-o', '--serial-output-port', required=False, help="Output port, e.g. /dev/pts/2.")
+        parser.add_argument('-a', '--aad', required=False, default="3000112233445566778899AABBCCDDEEFF", help="Additional authenticated data")
+        parser.add_argument('-p', '--parse', action='store_true', required=False, default=False, help="Parse and pretty print DSMR v5 telegram")
         self._args = parser.parse_args()
 
         self.connect()
@@ -186,7 +199,7 @@ class SmartyProxy():
     # Once we have a full encrypted "telegram", put everything together for decryption.
     def analyze(self):
         key = binascii.unhexlify(self._args.key)
-        additional_data = binascii.unhexlify("3000112233445566778899AABBCCDDEEFF")
+        additional_data = binascii.unhexlify(self._args.aad)
         iv = binascii.unhexlify(self._system_title + self._frame_counter)
         payload = binascii.unhexlify(self._payload)
         gcm_tag = binascii.unhexlify(self._gcm_tag)
@@ -199,7 +212,20 @@ class SmartyProxy():
                 payload,
                 gcm_tag
             )
-            print(decryption)
+            if has_dsmr_parser and self._args.parse:
+
+                try:
+                    parser = TelegramParser(telegram_specifications.V5)
+
+                    telegram = parser.parse(decryption.decode())
+                    for key in telegram:
+                        print("%s: %s" % (dsmr_parser.obis_name_mapping.EN[key], telegram[key]))
+                except:
+                    print("ERROR: Cannot parse DSMR Telegram")
+                    print(decryption)
+            else:
+                print(decryption)
+
 
             if self._args.serial_output_port:
                 self.write_to_serial_port(decryption)
